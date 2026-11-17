@@ -3,7 +3,7 @@
 # Tab Renamer
 
 Rename any Chrome tab. Press **Option+R** (Mac) or **Alt+Shift+R** (Windows/Linux), type a name, hit Enter.
-The name sticks when you reload that page.
+Each tab keeps its own name, even through reloads. Two tabs on the same page can have different names.
 
 Chrome has no built-in way to rename a tab. This is a tiny extension that adds one.
 
@@ -28,14 +28,15 @@ On Mac, if Chrome refuses Option+R, use Control+R there instead.
 
 ## What it does and doesn't do
 
-- Names are saved **per page address** (without the `#` part) and re-applied when you reload.
-- It keeps your name even if the site rewrites its own title.
+- The name belongs to **that tab**. Two tabs open on the same page keep separate names.
+- It survives reloads and navigation within the same site, and it holds even if the site rewrites its own title.
+- Closing the tab forgets the name (a tab you reopen with Cmd+Shift+T usually keeps it). Going to a different website in the same tab shows that site's own title.
 - It can't rename `chrome://` pages, the Chrome Web Store or Chrome's PDF viewer. Chrome blocks extensions there.
 
 ## Privacy
 
-Everything stays in your browser. Names are saved in Chrome's local extension storage on your computer.
-Nothing is sent anywhere, and there is no analytics, tracking or network code. The whole thing is three small files you can read:
+Everything stays in your browser. Each name is kept in that tab's own session storage, on your computer.
+Nothing is sent anywhere, and there is no analytics, tracking or network code. The extension asks for no storage permission. The whole thing is three small files you can read:
 `manifest.json`, `background.js`, `content.js`.
 
 Chrome will warn that it can "read and change all your data on all websites". That's because the extension runs on every page so it can re-apply your tab names after a reload. It only touches the page title.

@@ -1,24 +1,22 @@
-// Tab Renamer: remembers a custom title per page address and keeps it, even if the site rewrites its own title.
+// Tab Renamer: gives THIS tab a custom title and keeps it, even if the site rewrites its own title.
 (() => {
   if (window.__tabRenamerLoaded) return; window.__tabRenamerLoaded = true;
-  const keyOf = () => 'title:' + location.origin + location.pathname + location.search;
-  let custom = null, original = document.title, lastKey = keyOf(), applying = false;
+  // The name belongs to THIS tab: it lives in the tab's own sessionStorage, so two tabs on the same page keep separate names.
+  // It survives reloads and in-site navigation, and is forgotten when the tab is closed for good.
+  const KEY = '__tab_renamer_title';
+  const load = () => { try { return sessionStorage.getItem(KEY); } catch { return null; } };
+  const save = (n) => { try { if (n) sessionStorage.setItem(KEY, n); else sessionStorage.removeItem(KEY); } catch {} };
+  let custom = load(), original = document.title, applying = false;
 
   function apply() {
     if (!custom || document.title === custom) return;
     applying = true; document.title = custom; applying = false;
   }
-  async function refresh() {
-    lastKey = keyOf();
-    try { custom = (await chrome.storage.local.get(lastKey))[lastKey] || null; } catch { custom = null; }
-    if (custom) apply(); else if (original && document.title !== original) { /* site's own title stays */ }
-  }
   new MutationObserver(() => {
     if (applying) return;
-    if (keyOf() !== lastKey) { refresh(); return; }       // single-page app moved to another page
     if (custom) apply(); else original = document.title;   // remember the site's own title for Reset
   }).observe(document.head || document.documentElement, { childList: true, subtree: true, characterData: true });
-  chrome.storage.onChanged.addListener((ch, area) => { if (area === 'local' && ch[keyOf()]) refresh(); });
+  apply();
 
   function openBox() {
     if (document.getElementById('__tab_renamer_host')) { document.getElementById('__tab_renamer_host').remove(); }
@@ -43,16 +41,13 @@
       e.stopPropagation();
       if (e.key === 'Escape') return close();
       if (e.key !== 'Enter') return;
-      const name = input.value.trim(); const k = keyOf();
-      try {
-        if (name) { await chrome.storage.local.set({ [k]: name }); custom = name; apply(); }
-        else { await chrome.storage.local.remove(k); custom = null; document.title = original; }
-      } catch {}
+      const name = input.value.trim();
+      if (name) { save(name); custom = name; apply(); }
+      else { save(''); custom = null; document.title = original; }
       close();
     });
     for (const t of ['keyup', 'keypress']) input.addEventListener(t, (e) => e.stopPropagation());
     document.documentElement.appendChild(host); input.focus(); input.select();
   }
   chrome.runtime.onMessage.addListener((m) => { if (m && m.type === 'tab-renamer-open') openBox(); });
-  refresh();
 })();
